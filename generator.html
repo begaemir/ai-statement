@@ -146,7 +146,7 @@
             <select id="verification" style="width:100%;">
               <option value="">— Select —</option>
               <option value="All outputs were reviewed and edited by the authors for accuracy and clarity">Reviewed and edited by the authors</option>
-              <option value="All outputs were reviewed and edited by a language editor, and the authors reviewed the final version">Reviewed and edited by a language editor; authors reviewed final</option>
+              <option value="All outputs were reviewed and edited by a language editor, and the authors reviewed the final version">Reviewed and edited by a language editor, authors reviewed final</option>
             </select>
           </div>
 
@@ -154,9 +154,9 @@
             <div style="font-weight:600;">8) Privacy / confidentiality (choose one)</div>
             <select id="privacy" style="width:100%;">
               <option value="">— Select —</option>
-              <option value="No identifiable or sensitive data were entered into AI tools">No identifiable or sensitive data entered</option>
-              <option value="Only de-identified information was used and no confidential data were entered">De-identified only</option>
-              <option value="AI tools were used only on non-sensitive text and confidential data were excluded">Non-sensitive text only</option>
+              <option value="Only de-identified information was entered into the AI tools and no confidential data were entered">De-identified only, no confidential data entered</option>
+              <option value="No identifiable or sensitive data were entered into the AI tools">No identifiable or sensitive data entered</option>
+              <option value="AI tools were used only on non-sensitive text and confidential data were excluded">Non-sensitive text only, confidential data excluded</option>
             </select>
           </div>
 
@@ -166,7 +166,7 @@
               <option value="">— Select —</option>
               <option value="AI use had no influence on data analysis">No influence on data analysis</option>
               <option value="AI use did not influence interpretation, results, or conclusions">No influence on interpretation, results, or conclusions</option>
-              <option value="AI-assisted wording may have improved clarity, and final interpretation and conclusions were determined by the authors">Clarity improvement only; authors determined conclusions</option>
+              <option value="AI-assisted wording may have improved clarity, and final interpretation and conclusions were determined by the authors">Clarity improvement only, authors determined conclusions</option>
             </select>
           </div>
         </div>
@@ -197,7 +197,7 @@
 
 <script>
   const GAMER_URL = "https://ebm.bmj.com/content/30/6/390";
-  const STORAGE_KEY = "gamer_generator_no_semicolons_v1";
+  const STORAGE_KEY = "gamer_generator_academic_no_semicolons_v2";
 
   const ROLE_OPTIONS = [
     { id:"role_lang", label:"Language editing / clarity / grammar", phrase:"language editing" },
@@ -292,7 +292,7 @@
 
     const version = document.createElement("input");
     version.type = "text";
-    version.placeholder = "Version (e.g., 5.1)";
+    version.placeholder = "Version (e.g., 2.0)";
     version.className = "version";
 
     const start = document.createElement("input");
@@ -368,10 +368,10 @@
     start = norm.start; end = norm.end;
 
     if (!start && !end) return "";
-    if (start && !end) return `used ${start}`;
-    if (!start && end) return `used ${end}`;
-    if (start === end) return `used ${start}`;
-    return `used ${start} to ${end}`;
+    if (start && !end) return `on ${start}`;
+    if (!start && end) return `on ${end}`;
+    if (start === end) return `on ${start}`;
+    return `from ${start} to ${end}`;
   }
 
   function collectTools(){
@@ -393,7 +393,8 @@
     return `${items.slice(0,-1).join(", ")}, and ${items[items.length-1]}`;
   }
 
-  // ✅ No parentheses, no semicolons. Multiple tools joined with Oxford comma.
+  // ✅ Academic, no parentheses, no semicolons:
+  // "Claude, version 2, from 2026-01-20 to 2026-01-21, and Gemini, version 1, on 2026-01-22"
   function toolsToShortText(tools){
     const parts = [];
     for (const t of tools){
@@ -402,6 +403,7 @@
 
       const bits = [toolName];
       if (t.version) bits.push(`version ${t.version}`);
+
       const dr = dateRangeText(t.start, t.end);
       if (dr) bits.push(dr);
 
@@ -410,7 +412,7 @@
     return joinAcademicList(parts);
   }
 
-  function stripTrailingPunct(s){
+  function stripTrailingDots(s){
     return (s || "").trim().replace(/[.]+$/,"");
   }
 
@@ -435,36 +437,32 @@
 
     const roleClause = joinAcademicList(roles);
     const hasAcross = sections.includes("across the manuscript");
-    const sectionClause = hasAcross ? "across the manuscript" : joinAcademicList(sections);
+    const sectionPhrase = hasAcross ? "across the manuscript" : `in ${joinAcademicList(sections).replace(/^in\s+/,"")}`;
 
     const toolsClause = toolsText
       ? `generative AI tools were used, specifically ${toolsText}`
       : `generative AI tools were used`;
 
-    const verSentence = ensureSinglePeriod(stripTrailingPunct(verification));
-    const privSentence = ensureSinglePeriod(stripTrailingPunct(privacy));
-    const inflSentence = ensureSinglePeriod(stripTrailingPunct(influence));
+    const verSentence = ensureSinglePeriod(stripTrailingDots(verification));
+    const privSentence = ensureSinglePeriod(stripTrailingDots(privacy));
+    const inflSentence = ensureSinglePeriod(stripTrailingDots(influence));
+    const responsibilitySentence = "The authors retain full responsibility for the work.";
 
-    const promptSentence = promptingText ? ensureSinglePeriod(stripTrailingPunct(promptingText)) : "";
-
+    const promptSentence = promptingText ? ensureSinglePeriod(stripTrailingDots(promptingText)) : "";
     const fineTuneSentence = (fineTune === "Yes" && baseModelText)
-      ? ensureSinglePeriod(`A new or fine-tuned tool was developed based on ${stripTrailingPunct(baseModelText)}`)
+      ? ensureSinglePeriod(`A new or fine-tuned tool was developed based on ${stripTrailingDots(baseModelText)}`)
       : "";
 
-    // ✅ No semicolons. Multiple sentences, single paragraph.
+    // ✅ Single paragraph, no semicolons, academic tone.
     const html =
-      `Authors disclose in the ${gamerLinkHtml} that ${toolsClause} for ${roleClause} ` +
-      `${hasAcross ? "across the manuscript." : `(${sectionClause}). `}` +
-      `${verSentence} ${privSentence} ${inflSentence} ` +
-      `The authors retain full responsibility for the work.` +
+      `Authors disclose in the ${gamerLinkHtml} that ${toolsClause} for ${roleClause} ${sectionPhrase}. ` +
+      `${verSentence} ${privSentence} ${inflSentence} ${responsibilitySentence}` +
       (promptSentence ? ` ${promptSentence}` : "") +
       (fineTuneSentence ? ` ${fineTuneSentence}` : "");
 
     const plain =
-      `Authors disclose in the ${gamerLinkPlain} that ${toolsClause} for ${roleClause} ` +
-      `${hasAcross ? "across the manuscript." : `(${sectionClause}). `}` +
-      `${verSentence} ${privSentence} ${inflSentence} ` +
-      `The authors retain full responsibility for the work.` +
+      `Authors disclose in the ${gamerLinkPlain} that ${toolsClause} for ${roleClause} ${sectionPhrase}. ` +
+      `${verSentence} ${privSentence} ${inflSentence} ${responsibilitySentence}` +
       (promptSentence ? ` ${promptSentence}` : "") +
       (fineTuneSentence ? ` ${fineTuneSentence}` : "");
 
