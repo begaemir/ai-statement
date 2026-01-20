@@ -12,7 +12,6 @@
     body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
     .wrap{ max-width:1050px; margin:24px auto; padding:0 16px; }
     h1{ font-size:20px; margin:0 0 8px; }
-    .sub{ color:var(--muted); margin:0 0 16px; font-size:14px; line-height:1.35; }
     .grid{ display:grid; grid-template-columns: 1.15fr 0.85fr; gap:14px; }
     @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
     .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; }
@@ -198,7 +197,7 @@
 
 <script>
   const GAMER_URL = "https://ebm.bmj.com/content/30/6/390";
-  const STORAGE_KEY = "gamer_auto_en_full_v2";
+  const STORAGE_KEY = "gamer_auto_en_tools_no_parens_v1";
 
   const ROLE_OPTIONS = [
     { id:"role_lang", label:"Language editing / clarity / grammar", phrase:"language editing" },
@@ -387,20 +386,21 @@
     });
   }
 
+  // ✅ NO PARENTHESES IN OUTPUT: "Gemini, version 5.1, used 2026-01-19 to 2026-01-20; ChatGPT, used 2025-06-01"
   function toolsToShortText(tools){
     const parts = [];
     for (const t of tools){
       const toolName = (t.tool === "Other") ? (t.toolOther || "Other tool") : (t.tool || "");
       if (!toolName) continue;
 
-      const bits = [];
+      const bits = [toolName];
       if (t.version) bits.push(`version ${t.version}`);
       const dr = dateRangeText(t.start, t.end);
       if (dr) bits.push(dr);
 
-      parts.push(bits.length ? `${toolName} (${bits.join("; ")})` : toolName);
+      parts.push(bits.join(", "));
     }
-    return parts.join(", ");
+    return parts.join("; ");
   }
 
   function joinAcademicList(items){
@@ -438,9 +438,11 @@
       ? `; a new or fine-tuned tool was developed based on ${baseModelText.replace(/[.]+$/,"")}`
       : "";
 
+    // ✅ toolsText is now inserted WITHOUT parentheses and with clear label
+    const toolsClause = toolsText ? `generative AI tools: ${toolsText}` : `generative AI tools`;
+
     const coreHtml =
-      `Authors disclose in the ${gamerLinkHtml} that generative AI tools ${toolsText ? `(${toolsText}) ` : ""}` +
-      `were used for ${roleClause} ` +
+      `Authors disclose in the ${gamerLinkHtml} that ${toolsClause} were used for ${roleClause} ` +
       `${hasAcross ? "across the manuscript" : `(${sectionClause})`}; ` +
       `${verification.replace(/[.]+$/,"")}; ` +
       `${privacy.replace(/[.]+$/,"")}; ` +
@@ -448,8 +450,7 @@
       `${promptingClause}${fineTuneClause}`;
 
     const corePlain =
-      `Authors disclose in the ${gamerLinkPlain} that generative AI tools ${toolsText ? `(${toolsText}) ` : ""}` +
-      `were used for ${roleClause} ` +
+      `Authors disclose in the ${gamerLinkPlain} that ${toolsClause} were used for ${roleClause} ` +
       `${hasAcross ? "across the manuscript" : `(${sectionClause})`}; ` +
       `${verification.replace(/[.]+$/,"")}; ` +
       `${privacy.replace(/[.]+$/,"")}; ` +
@@ -551,10 +552,8 @@
     els.toolSection.style.display = isYes ? "block" : "none";
     els.extraSection.style.display = isYes ? "block" : "none";
     els.autoSection.style.display = isYes ? "block" : "none";
-
     els.baseModelWrap.style.display = (isYes && getFineTune() === "Yes") ? "block" : "none";
 
-    // Never show the "Please provide..." list
     els.missingInfo.textContent = "";
 
     if (!useAI){
@@ -610,14 +609,8 @@
     els.output.innerHTML = preview.html;
 
     const hasAnyMissing =
-      toolsMissing ||
-      !roles.length ||
-      !finalSections.length ||
-      !promptingText ||
-      !verification ||
-      !privacy ||
-      !influence ||
-      baseMissing;
+      toolsMissing || !roles.length || !finalSections.length ||
+      !promptingText || !verification || !privacy || !influence || baseMissing;
 
     if (hasAnyMissing){
       els.statusPill.textContent = "Missing required selections";
