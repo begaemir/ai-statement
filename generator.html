@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GAMER Author Statement Generator</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --card:#111827; --text:#e5e7eb; --muted:#9ca3af;
+      --line:#243042; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --btn:#0b1220;
+    }
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:1050px; margin:24px auto; padding:0 16px; }
+    h1{ font-size:20px; margin:0 0 8px; }
+    .sub{ color:var(--muted); margin:0 0 16px; font-size:14px; line-height:1.35; }
+    .grid{ display:grid; grid-template-columns: 1.15fr 0.85fr; gap:14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pill{ font-size:12px; padding:3px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
+    .pill.ok{ border-color: rgba(34,197,94,.4); color: rgba(34,197,94,.95); }
+    .pill.warn{ border-color: rgba(245,158,11,.4); color: rgba(245,158,11,.95); }
+    .pill.bad{ border-color: rgba(239,68,68,.4); color: rgba(239,68,68,.95); }
+    .section{ border-top:1px solid var(--line); padding-top:12px; margin-top:12px; }
+    .section:first-child{ border-top:none; padding-top:0; margin-top:0; }
+    label{ font-size:14px; }
+    select, input[type="text"], input[type="date"]{
+      background:#0b1220; color:var(--text);
+      border:1px solid var(--line); border-radius:10px;
+      padding:9px 10px; font-size:14px; box-sizing:border-box;
+    }
+    input[type="text"]{ width:100%; }
+    .btn{
+      background:var(--btn); color:var(--text);
+      border:1px solid var(--line); border-radius:12px;
+      padding:10px 12px; cursor:pointer; font-size:14px;
+    }
+    .btn:hover{ border-color:#3b4b63; }
+    .btn.primary{ background:#111b2e; border-color:#36507a; }
+    .small{ font-size:12px; color:var(--muted); }
+    .hint{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.3; }
+    .out{ white-space:pre-wrap; line-height:1.45; font-size:14px; }
+    .toolRow{
+      border:1px solid var(--line); border-radius:12px; padding:10px; background:#0b1220;
+      display:grid; grid-template-columns: 1.2fr 1fr 0.9fr 0.9fr auto; gap:8px; align-items:end;
+    }
+    @media (max-width: 980px){
+      .toolRow{ grid-template-columns: 1fr 1fr; }
+      .toolRow .span2{ grid-column: span 2; }
+    }
+    .toolRow .removeBtn{ padding:9px 10px; border-radius:10px; }
+    .chkgrid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:8px; margin-top:8px; }
+    @media (max-width: 520px){ .chkgrid{ grid-template-columns: 1fr; } }
+    .chk{ display:flex; gap:8px; align-items:flex-start; padding:8px 10px; border:1px solid var(--line); border-radius:12px; background:#0b1220; }
+    a{ color:#93c5fd; text-decoration: underline; }
+    .badField{ border-color: rgba(239,68,68,.75) !important; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>GAMER — Automated Author Statement Generator (English)</h1>
+
+    <div class="grid">
+      <!-- FORM -->
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <span class="pill warn" id="statusPill">Select Yes/No</span>
+          <button class="btn" id="resetBtn" type="button">Reset</button>
+        </div>
+
+        <!-- Item 1 -->
+        <div class="section">
+          <div style="font-weight:600; margin-bottom:8px;">1) Did you use any generative AI tools in any part of this study/manuscript?</div>
+          <div class="row">
+            <label><input type="radio" name="use_ai" value="Yes"> Yes</label>
+            <label><input type="radio" name="use_ai" value="No"> No</label>
+          </div>
+        </div>
+
+        <!-- Item 2 -->
+        <div class="section" id="toolSection" style="display:none;">
+          <div class="row" style="justify-content:space-between;">
+            <div>
+              <div style="font-weight:600;">2) Tool details</div>
+              <div class="small">Tool • Version • Date range</div>
+            </div>
+            <button class="btn" id="addToolBtn" type="button">+ Add tool</button>
+          </div>
+
+          <div id="toolsContainer" style="margin-top:10px;"></div>
+          <div class="hint">Dates can be a single day (same start/end) or a range. If end date is earlier than start date, dates are automatically corrected.</div>
+        </div>
+
+        <!-- Items 3-4 -->
+        <div class="section" id="extraSection" style="display:none;">
+          <div style="font-weight:600;">3–4) Prompting / fine-tuning</div>
+
+          <div class="section">
+            <div style="font-weight:600;">3) Prompting approach (choose one)</div>
+            <select id="prompting" style="width:100%;">
+              <option value="">— Select —</option>
+              <option value="Prompting was limited to language polishing">Prompting limited to language polishing</option>
+              <option value="Prompting followed a standard structured approach">Standard structured prompting</option>
+              <option value="Prompting was used for non-substantive drafting and editing">Non-substantive drafting/editing prompts</option>
+              <option value="No specific prompting technique is applicable">No specific prompting technique applicable</option>
+            </select>
+          </div>
+
+          <div class="section">
+            <div style="font-weight:600;">4) Was any new GAI tool developed or fine-tuned?</div>
+            <div class="row" style="margin-top:8px;">
+              <label><input type="radio" name="finetune" value="No" checked> No</label>
+              <label><input type="radio" name="finetune" value="Yes"> Yes</label>
+            </div>
+
+            <div id="baseModelWrap" style="margin-top:10px; display:none;">
+              <div class="small" style="margin-bottom:6px;">If Yes, select the original/base model</div>
+              <select id="baseModel" style="width:100%;">
+                <option value="">— Select base model —</option>
+                <option value="the OpenAI GPT family">OpenAI GPT family</option>
+                <option value="the Meta Llama family">Meta Llama family</option>
+                <option value="the Google Gemini family">Google Gemini family</option>
+                <option value="the Anthropic Claude family">Anthropic Claude family</option>
+                <option value="another base model">Other base model</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items 5-9 -->
+        <div class="section" id="autoSection" style="display:none;">
+          <div style="font-weight:600;">5–9) Automated selections</div>
+
+          <div class="section">
+            <div style="font-weight:600;">5) What was AI used for? (select all that apply)</div>
+            <div class="chkgrid" id="roleChecks"></div>
+          </div>
+
+          <div class="section">
+            <div style="font-weight:600;">6) Where did AI contribute? (select all that apply)</div>
+            <div class="chkgrid" id="sectionChecks"></div>
+          </div>
+
+          <div class="section">
+            <div style="font-weight:600;">7) Verification / editing (choose one)</div>
+            <select id="verification" style="width:100%;">
+              <option value="">— Select —</option>
+              <option value="all outputs were reviewed and edited by the authors for accuracy and clarity">Reviewed & edited by the authors</option>
+              <option value="all outputs were reviewed and edited by a language editor, and the authors reviewed the final version">Reviewed & edited by a language editor; authors reviewed final</option>
+            </select>
+          </div>
+
+          <div class="section">
+            <div style="font-weight:600;">8) Privacy / confidentiality (choose one)</div>
+            <select id="privacy" style="width:100%;">
+              <option value="">— Select —</option>
+              <option value="no identifiable or sensitive data were entered into AI tools">No identifiable/sensitive data entered</option>
+              <option value="only de-identified information was used and no confidential data were entered">De-identified only</option>
+              <option value="AI tools were used only on non-sensitive text and confidential data were excluded">Non-sensitive text only</option>
+            </select>
+          </div>
+
+          <div class="section">
+            <div style="font-weight:600;">9) Impact (choose one)</div>
+            <select id="influence" style="width:100%;">
+              <option value="">— Select —</option>
+              <option value="AI use had no influence on data analysis; the authors retain full responsibility for the work">No influence on data analysis; authors responsible</option>
+              <option value="AI use did not influence interpretation, results, or conclusions; the authors retain full responsibility">No influence on interpretation/conclusions; authors responsible</option>
+              <option value="AI-assisted wording may have improved clarity; final interpretation and conclusions were determined by the authors">Clarity improvement only; authors determined conclusions</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="row" style="justify-content:space-between;">
+            <div class="row">
+              <button class="btn primary" id="copyBtn" type="button">Copy statement</button>
+              <button class="btn" id="selectAllBtn" type="button">Select all</button>
+            </div>
+            <div class="small" id="missingInfo"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <strong>Generated statement</strong>
+        </div>
+
+        <div class="section">
+          <div class="out" id="output"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const GAMER_URL = "https://ebm.bmj.com/content/30/6/390";
+  const STORAGE_KEY = "gamer_auto_en_full_v2";
+
+  const ROLE_OPTIONS = [
+    { id:"role_lang", label:"Language editing / clarity / grammar", phrase:"language editing" },
+    { id:"role_draft", label:"Drafting non-substantive text", phrase:"drafting non-substantive text" },
+    { id:"role_summarize", label:"Summarizing background literature", phrase:"summarizing background literature" },
+    { id:"role_translate", label:"Translation (non-sensitive text)", phrase:"translation" },
+    { id:"role_code", label:"Code assistance (author-reviewed)", phrase:"code assistance (author-reviewed)" },
+  ];
+
+  const SECTION_OPTIONS = [
+    { id:"sec_whole", label:"Whole manuscript", phrase:"across the manuscript" },
+    { id:"sec_title", label:"Title / Abstract", phrase:"in the Title/Abstract" },
+    { id:"sec_intro", label:"Introduction", phrase:"in the Introduction" },
+    { id:"sec_methods", label:"Methods", phrase:"in the Methods" },
+    { id:"sec_results", label:"Results", phrase:"in the Results" },
+    { id:"sec_disc", label:"Discussion / Conclusion", phrase:"in the Discussion/Conclusion" },
+    { id:"sec_tables", label:"Tables / Figures (captions or descriptions)", phrase:"in Tables/Figures" },
+    { id:"sec_supp", label:"Supplementary materials", phrase:"in supplementary materials" },
+    { id:"sec_refs", label:"References (formatting only)", phrase:"in reference formatting" },
+  ];
+
+  const els = {
+    statusPill: document.getElementById("statusPill"),
+    missingInfo: document.getElementById("missingInfo"),
+    output: document.getElementById("output"),
+
+    toolSection: document.getElementById("toolSection"),
+    extraSection: document.getElementById("extraSection"),
+    autoSection: document.getElementById("autoSection"),
+
+    addToolBtn: document.getElementById("addToolBtn"),
+    toolsContainer: document.getElementById("toolsContainer"),
+
+    prompting: document.getElementById("prompting"),
+    baseModelWrap: document.getElementById("baseModelWrap"),
+    baseModel: document.getElementById("baseModel"),
+
+    roleChecks: document.getElementById("roleChecks"),
+    sectionChecks: document.getElementById("sectionChecks"),
+    verification: document.getElementById("verification"),
+    privacy: document.getElementById("privacy"),
+    influence: document.getElementById("influence"),
+
+    copyBtn: document.getElementById("copyBtn"),
+    selectAllBtn: document.getElementById("selectAllBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+  };
+
+  function getUseAI(){
+    const r = document.querySelector('input[name="use_ai"]:checked');
+    return r ? r.value : "";
+  }
+  function setUseAI(val){
+    const r = document.querySelector(`input[name="use_ai"][value="${val}"]`);
+    if (r) r.checked = true;
+  }
+  function getFineTune(){
+    const r = document.querySelector('input[name="finetune"]:checked');
+    return r ? r.value : "No";
+  }
+  function setFineTune(val){
+    const r = document.querySelector(`input[name="finetune"][value="${val}"]`);
+    if (r) r.checked = true;
+  }
+
+  function makeCheckboxGrid(container, options, group){
+    container.innerHTML = "";
+    for (const opt of options){
+      const wrap = document.createElement("label");
+      wrap.className = "chk";
+      wrap.innerHTML = `<input type="checkbox" data-group="${group}" data-id="${opt.id}" style="margin-top:2px;" /> <div>${opt.label}</div>`;
+      container.appendChild(wrap);
+    }
+  }
+
+  function toolRowTemplate(rowId){
+    const row = document.createElement("div");
+    row.className = "toolRow";
+    row.dataset.rowId = rowId;
+
+    const toolSel = document.createElement("select");
+    toolSel.innerHTML = `
+      <option value="">Tool</option>
+      <option value="ChatGPT">ChatGPT</option>
+      <option value="Claude">Claude</option>
+      <option value="Gemini">Gemini</option>
+      <option value="Copilot">Copilot</option>
+      <option value="Grammarly">Grammarly</option>
+      <option value="Other">Other</option>
+    `;
+    toolSel.className = "tool";
+
+    const version = document.createElement("input");
+    version.type = "text";
+    version.placeholder = "Version (e.g., 5.1)";
+    version.className = "version";
+
+    const start = document.createElement("input");
+    start.type = "date";
+    start.className = "start";
+
+    const end = document.createElement("input");
+    end.type = "date";
+    end.className = "end";
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "btn removeBtn";
+    remove.textContent = "Remove";
+
+    const toolOther = document.createElement("input");
+    toolOther.type = "text";
+    toolOther.placeholder = "If Other, specify tool name";
+    toolOther.className = "toolOther span2";
+    toolOther.style.display = "none";
+
+    toolSel.addEventListener("change", () => {
+      toolOther.style.display = (toolSel.value === "Other") ? "block" : "none";
+      updateAll();
+    });
+    [toolOther, version, start, end].forEach(x => x.addEventListener("input", updateAll));
+    remove.addEventListener("click", () => { row.remove(); updateAll(); });
+
+    row.appendChild(toolSel);
+    row.appendChild(version);
+    row.appendChild(start);
+    row.appendChild(end);
+    row.appendChild(remove);
+    row.appendChild(toolOther);
+    return row;
+  }
+
+  function addToolRow(prefill=null){
+    const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+    const row = toolRowTemplate(id);
+    els.toolsContainer.appendChild(row);
+
+    if (prefill){
+      row.querySelector(".tool").value = prefill.tool || "";
+      row.querySelector(".version").value = prefill.version || "";
+      row.querySelector(".start").value = prefill.start || "";
+      row.querySelector(".end").value = prefill.end || "";
+      const toolOther = row.querySelector(".toolOther");
+      if ((prefill.tool || "") === "Other"){
+        toolOther.style.display = "block";
+        toolOther.value = prefill.toolOther || "";
+      } else {
+        toolOther.style.display = "none";
+        toolOther.value = prefill.toolOther || "";
+      }
+    }
+    updateAll();
+  }
+
+  function getCheckedPhrases(group, options){
+    const checks = Array.from(document.querySelectorAll(`input[type="checkbox"][data-group="${group}"]`));
+    const ids = checks.filter(c => c.checked).map(c => c.dataset.id);
+    return options.filter(o => ids.includes(o.id)).map(o => o.phrase);
+  }
+
+  function normalizeDateRange(start, end){
+    if (start && end && end < start) return { start: end, end: start };
+    return { start, end };
+  }
+
+  function dateRangeText(start, end){
+    const norm = normalizeDateRange(start, end);
+    start = norm.start; end = norm.end;
+
+    if (!start && !end) return "";
+    if (start && !end) return `used ${start}`;
+    if (!start && end) return `used ${end}`;
+    if (start === end) return `used ${start}`;
+    return `used ${start} to ${end}`;
+  }
+
+  function collectTools(){
+    const rows = Array.from(els.toolsContainer.querySelectorAll(".toolRow"));
+    return rows.map(r => {
+      const tool = r.querySelector(".tool").value.trim();
+      const toolOther = r.querySelector(".toolOther").value.trim();
+      const version = r.querySelector(".version").value.trim();
+      const start = r.querySelector(".start").value;
+      const end = r.querySelector(".end").value;
+      return { tool, toolOther, version, start, end };
+    });
+  }
+
+  function toolsToShortText(tools){
+    const parts = [];
+    for (const t of tools){
+      const toolName = (t.tool === "Other") ? (t.toolOther || "Other tool") : (t.tool || "");
+      if (!toolName) continue;
+
+      const bits = [];
+      if (t.version) bits.push(`version ${t.version}`);
+      const dr = dateRangeText(t.start, t.end);
+      if (dr) bits.push(dr);
+
+      parts.push(bits.length ? `${toolName} (${bits.join("; ")})` : toolName);
+    }
+    return parts.join(", ");
+  }
+
+  function joinAcademicList(items){
+    if (items.length === 0) return "";
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} and ${items[1]}`;
+    return `${items.slice(0,-1).join(", ")}, and ${items[items.length-1]}`;
+  }
+
+  function ensureSinglePeriod(s){
+    const t = (s || "").trim().replace(/[.]+$/,"");
+    return t ? (t + ".") : "";
+  }
+
+  function renderStatement({useAI, toolsText, roles, sections, promptingText, fineTune, baseModelText, verification, privacy, influence}){
+    const gamerLinkHtml = `<a href="${GAMER_URL}" target="_blank" rel="noopener noreferrer">GAMER statement</a>`;
+    const gamerLinkPlain = `GAMER statement (${GAMER_URL})`;
+
+    if (useAI === "No"){
+      const html = ensureSinglePeriod(
+        `Authors declare in the ${gamerLinkHtml} that no generative artificial intelligence (GAI) tools (including large language models or large visual models) were used in any section or step of this manuscript or study`
+      );
+      const plain = ensureSinglePeriod(
+        `Authors declare in the ${gamerLinkPlain} that no generative artificial intelligence (GAI) tools (including large language models or large visual models) were used in any section or step of this manuscript or study`
+      );
+      return { html, plain };
+    }
+
+    const roleClause = joinAcademicList(roles);
+    const hasAcross = sections.includes("across the manuscript");
+    const sectionClause = hasAcross ? "across the manuscript" : joinAcademicList(sections);
+
+    const promptingClause = promptingText ? `; ${promptingText.replace(/[.]+$/,"").toLowerCase()}` : "";
+    const fineTuneClause = (fineTune === "Yes" && baseModelText)
+      ? `; a new or fine-tuned tool was developed based on ${baseModelText.replace(/[.]+$/,"")}`
+      : "";
+
+    const coreHtml =
+      `Authors disclose in the ${gamerLinkHtml} that generative AI tools ${toolsText ? `(${toolsText}) ` : ""}` +
+      `were used for ${roleClause} ` +
+      `${hasAcross ? "across the manuscript" : `(${sectionClause})`}; ` +
+      `${verification.replace(/[.]+$/,"")}; ` +
+      `${privacy.replace(/[.]+$/,"")}; ` +
+      `${influence.replace(/[.]+$/,"")}` +
+      `${promptingClause}${fineTuneClause}`;
+
+    const corePlain =
+      `Authors disclose in the ${gamerLinkPlain} that generative AI tools ${toolsText ? `(${toolsText}) ` : ""}` +
+      `were used for ${roleClause} ` +
+      `${hasAcross ? "across the manuscript" : `(${sectionClause})`}; ` +
+      `${verification.replace(/[.]+$/,"")}; ` +
+      `${privacy.replace(/[.]+$/,"")}; ` +
+      `${influence.replace(/[.]+$/,"")}` +
+      `${promptingClause}${fineTuneClause}`;
+
+    return { html: ensureSinglePeriod(coreHtml), plain: ensureSinglePeriod(corePlain) };
+  }
+
+  function saveState(state){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){ return null; }
+  }
+
+  function collectState() {
+    const useAI = getUseAI();
+    const roles = Array.from(document.querySelectorAll(`input[type="checkbox"][data-group="role"]`)).map(c => ({ id:c.dataset.id, checked:c.checked }));
+    const sections = Array.from(document.querySelectorAll(`input[type="checkbox"][data-group="section"]`)).map(c => ({ id:c.dataset.id, checked:c.checked }));
+    return {
+      useAI,
+      tools: collectTools(),
+      prompting: els.prompting.value,
+      finetune: getFineTune(),
+      baseModel: els.baseModel.value,
+      roles,
+      sections,
+      verification: els.verification.value,
+      privacy: els.privacy.value,
+      influence: els.influence.value
+    };
+  }
+
+  function applyState(state){
+    if (!state) return;
+
+    if (state.useAI) setUseAI(state.useAI);
+
+    els.toolsContainer.innerHTML = "";
+    if (Array.isArray(state.tools) && state.tools.length){
+      state.tools.forEach(t => addToolRow(t));
+    } else if (state.useAI === "Yes") {
+      addToolRow();
+    }
+
+    els.prompting.value = state.prompting || "";
+    setFineTune(state.finetune || "No");
+
+    els.baseModelWrap.style.display = (getUseAI()==="Yes" && getFineTune()==="Yes") ? "block" : "none";
+    els.baseModel.value = state.baseModel || "";
+
+    const roleMap = new Map((state.roles || []).map(x => [x.id, !!x.checked]));
+    const secMap  = new Map((state.sections || []).map(x => [x.id, !!x.checked]));
+    document.querySelectorAll(`input[type="checkbox"][data-group="role"]`).forEach(c => c.checked = roleMap.get(c.dataset.id) || false);
+    document.querySelectorAll(`input[type="checkbox"][data-group="section"]`).forEach(c => c.checked = secMap.get(c.dataset.id) || false);
+
+    els.verification.value = state.verification || "";
+    els.privacy.value = state.privacy || "";
+    els.influence.value = state.influence || "";
+  }
+
+  function setValidationStyles({toolsMissing, missingDropdowns, baseMissing}){
+    const rows = Array.from(els.toolsContainer.querySelectorAll(".toolRow"));
+    rows.forEach(r => {
+      r.querySelector(".tool").classList.remove("badField");
+      r.querySelector(".toolOther").classList.remove("badField");
+    });
+    if (toolsMissing){
+      const first = rows[0];
+      if (first){
+        first.querySelector(".tool").classList.add("badField");
+        if (first.querySelector(".tool").value === "Other"){
+          first.querySelector(".toolOther").classList.add("badField");
+        }
+      }
+    }
+
+    [els.prompting, els.verification, els.privacy, els.influence, els.baseModel].forEach(x => x.classList.remove("badField"));
+    if (missingDropdowns){
+      if (!els.prompting.value) els.prompting.classList.add("badField");
+      if (!els.verification.value) els.verification.classList.add("badField");
+      if (!els.privacy.value) els.privacy.classList.add("badField");
+      if (!els.influence.value) els.influence.classList.add("badField");
+    }
+    if (baseMissing){
+      els.baseModel.classList.add("badField");
+    }
+  }
+
+  function updateAll(){
+    const useAI = getUseAI();
+    const isYes = useAI === "Yes";
+
+    els.toolSection.style.display = isYes ? "block" : "none";
+    els.extraSection.style.display = isYes ? "block" : "none";
+    els.autoSection.style.display = isYes ? "block" : "none";
+
+    els.baseModelWrap.style.display = (isYes && getFineTune() === "Yes") ? "block" : "none";
+
+    // Never show the "Please provide..." list
+    els.missingInfo.textContent = "";
+
+    if (!useAI){
+      els.statusPill.textContent = "Select Yes/No";
+      els.statusPill.className = "pill warn";
+      els.output.textContent = "Please select Yes or No.";
+      return;
+    }
+
+    if (useAI === "No"){
+      const { html } = renderStatement({ useAI:"No" });
+      els.output.innerHTML = html;
+      els.statusPill.textContent = "Complete";
+      els.statusPill.className = "pill ok";
+      setValidationStyles({toolsMissing:false, missingDropdowns:false, baseMissing:false});
+      saveState(collectState());
+      return;
+    }
+
+    const toolsText = toolsToShortText(collectTools());
+    const roles = getCheckedPhrases("role", ROLE_OPTIONS);
+    const sections = getCheckedPhrases("section", SECTION_OPTIONS);
+    const finalSections = sections.includes("across the manuscript") ? ["across the manuscript"] : sections;
+
+    const promptingText = els.prompting.value;
+    const fineTune = getFineTune();
+    const baseModelSel = els.baseModel.value;
+    const baseMissing = (fineTune === "Yes" && !baseModelSel);
+    const baseModelText = (fineTune === "Yes" && baseModelSel) ? baseModelSel : "";
+
+    const verification = els.verification.value;
+    const privacy = els.privacy.value;
+    const influence = els.influence.value;
+
+    const toolsMissing = !toolsText;
+    const missingDropdowns = (!promptingText || !verification || !privacy || !influence);
+
+    setValidationStyles({ toolsMissing, missingDropdowns, baseMissing });
+
+    const preview = renderStatement({
+      useAI:"Yes",
+      toolsText: toolsText || "",
+      roles: roles.length ? roles : ["—"],
+      sections: finalSections.length ? finalSections : ["—"],
+      promptingText: promptingText || "",
+      fineTune,
+      baseModelText,
+      verification: verification || "—",
+      privacy: privacy || "—",
+      influence: influence || "—"
+    });
+
+    els.output.innerHTML = preview.html;
+
+    const hasAnyMissing =
+      toolsMissing ||
+      !roles.length ||
+      !finalSections.length ||
+      !promptingText ||
+      !verification ||
+      !privacy ||
+      !influence ||
+      baseMissing;
+
+    if (hasAnyMissing){
+      els.statusPill.textContent = "Missing required selections";
+      els.statusPill.className = "pill bad";
+    } else {
+      els.statusPill.textContent = "Complete";
+      els.statusPill.className = "pill ok";
+    }
+
+    saveState(collectState());
+  }
+
+  async function copyStatement(){
+    const html = els.output.innerHTML.trim();
+    const plain = els.output.textContent.trim();
+    if (!plain) return;
+
+    try{
+      if (navigator.clipboard && window.ClipboardItem){
+        const item = new ClipboardItem({
+          "text/plain": new Blob([plain], {type:"text/plain"}),
+          "text/html": new Blob([html], {type:"text/html"})
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      els.copyBtn.textContent = "Copied!";
+      setTimeout(() => els.copyBtn.textContent = "Copy statement", 900);
+    }catch(e){
+      alert("Copy failed. Please select the statement and copy manually.");
+    }
+  }
+
+  // Init UI
+  makeCheckboxGrid(els.roleChecks, ROLE_OPTIONS, "role");
+  makeCheckboxGrid(els.sectionChecks, SECTION_OPTIONS, "section");
+
+  // Events
+  document.querySelectorAll('input[name="use_ai"]').forEach(r => r.addEventListener("change", () => {
+    const val = getUseAI();
+    if (val === "Yes" && els.toolsContainer.children.length === 0) addToolRow();
+    updateAll();
+  }));
+
+  document.querySelectorAll('input[name="finetune"]').forEach(r => r.addEventListener("change", updateAll));
+  els.baseModel.addEventListener("change", updateAll);
+
+  els.addToolBtn.addEventListener("click", () => addToolRow());
+  els.prompting.addEventListener("change", updateAll);
+  els.verification.addEventListener("change", updateAll);
+  els.privacy.addEventListener("change", updateAll);
+  els.influence.addEventListener("change", updateAll);
+
+  document.addEventListener("change", (e) => {
+    if (e.target && e.target.matches('input[type="checkbox"][data-group]')) updateAll();
+  });
+
+  els.copyBtn.addEventListener("click", copyStatement);
+
+  els.selectAllBtn.addEventListener("click", () => {
+    const range = document.createRange();
+    range.selectNodeContents(els.output);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+
+  els.resetBtn.addEventListener("click", () => {
+    if (!confirm("Reset all fields?")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    document.querySelectorAll('input[name="use_ai"]').forEach(r => r.checked = false);
+    document.querySelectorAll('input[name="finetune"]').forEach(r => r.checked = (r.value==="No"));
+    els.toolsContainer.innerHTML = "";
+    document.querySelectorAll(`input[type="checkbox"][data-group]`).forEach(c => c.checked = false);
+    els.prompting.value = "";
+    els.baseModel.value = "";
+    els.verification.value = "";
+    els.privacy.value = "";
+    els.influence.value = "";
+    updateAll();
+  });
+
+  // Load state + init
+  const state = loadState();
+  applyState(state);
+  if (getUseAI() === "Yes" && els.toolsContainer.children.length === 0) addToolRow();
+  updateAll();
+</script>
+</body>
+</html>
